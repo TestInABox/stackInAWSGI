@@ -1,10 +1,17 @@
 [report]
+show_missing = True
+partial_branches = True
+precision = 2
 exclude_lines =
     # Have to re-enable the standard pragma
     pragma: no cover
 
     # Don't complain if tests don't hit defensive assertion code:
     raise NotImplementedError
+omit = *test*
+#include = *stackinawsgi*
 
 [run]
-omit = *tests*
+branch = True
+omit = *test* *.tox*
+source = stackinawsgi

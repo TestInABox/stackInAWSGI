@@ -1,7 +1,11 @@
 import sys
 from setuptools import setup, find_packages
 
-REQUIRES = ['stackinabox', 'six', 'sphinx']
+REQUIRES = [
+    'stackinabox',
+    'six',
+    'sphinx'
+]
 
 setup(
     name='stackinawsgi',

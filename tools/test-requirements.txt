@@ -1,3 +1,5 @@
+# We need StackInABox Master until 0.10 is released
+-e git+https://github.com/TestInABox/stackInABox#egg=stackinabox-0.10a
 coverage
 ddt
 httpretty==0.8.6
@@ -8,3 +10,5 @@ requests
 requests-mock
 responses>=0.4.0
 six
+mock
+detox
