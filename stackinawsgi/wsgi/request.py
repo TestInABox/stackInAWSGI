@@ -1,5 +1,5 @@
 """
-StackInAWSGI Request Model
+Stack-In-A-WSGI Request Model
 """
 import six
 

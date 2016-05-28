@@ -1,8 +1,6 @@
 """
-StackInAWSGI Response Module
+Stack-In-A-WSGI Response Module
 """
-
-import six
 
 
 from stackinabox.util.tools import CaseInsensitiveDict

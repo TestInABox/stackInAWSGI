@@ -1,4 +1,5 @@
 """
+Stack-In-A-WSGI: stackinawsgi.wsgi.request.Request testing
 """
 
 import unittest
@@ -10,15 +11,29 @@ from stackinawsgi.test.helpers import (
 
 
 class TestWsgiRequest(unittest.TestCase):
+    """
+    Test the interaction of StackInAWSGI's Request object
+
+    Request object should be similar to requests's Request object.
+    """
 
     def setUp(self):
+        """
+        Test setup
+        """
         self.environment = make_environment(self)
         self.environment_https = make_environment(self, url_scheme='https')
 
     def tearDown(self):
+        """
+        Test Teardown
+        """
         pass
 
     def test_construction(self):
+        """
+        Basic object creation
+        """
         self.assertNotIn('QUERY_STRING', self.environment)
 
         request = Request(self.environment)
@@ -29,6 +44,9 @@ class TestWsgiRequest(unittest.TestCase):
         self.assertIsNone(request.query)
 
     def test_construction_without_path(self):
+        """
+        Basic object creation without any URL path
+        """
         self.assertNotIn('QUERY_STRING', self.environment)
         self.environment['PATH_INFO'] = None
 
@@ -40,6 +58,10 @@ class TestWsgiRequest(unittest.TestCase):
         self.assertIsNone(request.query)
 
     def test_construction_with_nonroot_path(self):
+        """
+        Basic Object creation with a non-root path (e.g. not simply '/') ending
+        without any slash (/)
+        """
         self.environment['PATH_INFO'] = u'/happy/days'
         request = Request(self.environment)
         self.assertEqual(request.environment, self.environment)
@@ -49,6 +71,10 @@ class TestWsgiRequest(unittest.TestCase):
         self.assertIsNone(request.query)
 
     def test_construction_with_nonroot_path_ends_with_slash(self):
+        """
+        Basic Construction with a non-root path (not simply '/') ending with
+        a slash (/)
+        """
         self.environment['PATH_INFO'] = u'/happy/days/'
         request = Request(self.environment)
         self.assertEqual(request.environment, self.environment)
@@ -58,6 +84,9 @@ class TestWsgiRequest(unittest.TestCase):
         self.assertIsNone(request.query)
 
     def test_construction_with_qs(self):
+        """
+        Basic construction with a Query String
+        """
         self.assertNotIn('QUERY_STRING', self.environment)
         self.environment['QUERY_STRING'] = 'happy=days'
 
@@ -69,6 +98,9 @@ class TestWsgiRequest(unittest.TestCase):
         self.assertEqual(request.query, self.environment['QUERY_STRING'])
 
     def test_url_property_http(self):
+        """
+        Validate the re-construction of the HTTP URL without a Query String
+        """
         self.assertNotIn('QUERY_STRING', self.environment)
 
         request = Request(self.environment)
@@ -81,6 +113,9 @@ class TestWsgiRequest(unittest.TestCase):
         )
 
     def test_url_property_https(self):
+        """
+        Validate the re-construction of the HTTPS URL without a Query String
+        """
         self.assertNotIn('QUERY_STRING', self.environment_https)
 
         request = Request(self.environment_https)
@@ -93,6 +128,10 @@ class TestWsgiRequest(unittest.TestCase):
         )
 
     def test_url_property_http_alternate_port(self):
+        """
+        Validate the re-construction of the HTTP URL without a Query String on
+        a non-standard HTTP port
+        """
         self.assertNotIn('QUERY_STRING', self.environment)
         self.environment['SERVER_PORT'] = str(8080)
 
@@ -106,6 +145,10 @@ class TestWsgiRequest(unittest.TestCase):
         )
 
     def test_url_property_https_alternate_port(self):
+        """
+        Validate the re-construction of the HTTPS URL without a Query String on
+        a non-standard HTTP port
+        """
         self.assertNotIn('QUERY_STRING', self.environment_https)
         self.environment_https['SERVER_PORT'] = str(8443)
 
@@ -119,6 +162,10 @@ class TestWsgiRequest(unittest.TestCase):
         )
 
     def test_url_property_with_http_host_envvar(self):
+        """
+        Validate the re-construction of the HTTPS URL without a Query String
+        with the HTTP_HOST variable set
+        """
         self.assertNotIn('QUERY_STRING', self.environment)
         self.environment['HTTP_HOST'] = "stackinabox:9000"
 
@@ -132,6 +179,9 @@ class TestWsgiRequest(unittest.TestCase):
         )
 
     def test_url_property_http_with_qs(self):
+        """
+        Validate the re-construction of the HTTPS URL with a Query String
+        """
         self.assertNotIn('QUERY_STRING', self.environment)
         self.environment['QUERY_STRING'] = 'happy=days'
 

@@ -1,5 +1,5 @@
 """
-StackInAWSGI Application
+Stack-In-A-WSGI Application
 """
 from __future__ import absolute_import
 

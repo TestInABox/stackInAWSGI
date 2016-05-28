@@ -1,7 +1,7 @@
 """
+Stack-In-A-WSGI: Test Helpers
 """
 
-import functools
 import logging
 import tempfile
 
@@ -9,18 +9,33 @@ from stackinabox.util.tools import CaseInsensitiveDict
 
 
 class InvalidService(object):
+    """
+    Invalid Stack-In-A-Box Service, does not implement StackInABoxService
+    """
     pass
 
 
 class WsgiMock(object):
+    """
+    StackInAWSGI WSGI Mock for the WSGI start_response() callable
+
+    The WsgiMock object is used is place of the start_response callable
+    when running a raw WSGI application for testing.
+    """
 
     def __init__(self):
+        """
+        Initialize the WsgiMock object
+        """
         self.headers = CaseInsensitiveDict()
         self.status = 550
         self.logger = logging.getLogger(__name__)
         self.logger.info('Created WSGI Mock - ID = {0}'.format(id(self)))
 
     def __call__(self, http_status_code, http_headers):
+        """
+        start_response callable interface
+        """
         self.logger.debug(
             'Received WSGI Callback: Status {0}'.format(
                 http_status_code
@@ -38,6 +53,9 @@ def make_environment(case, method='HEAD', path=u'/', qs=None, host=None,
                      url_scheme='http', headers={},
                      content_type=None, content_length=None,
                      http_protocol='http/1.1'):
+    """
+    Build a WSGI environment for use in testing
+    """
     if url_scheme == 'https' and port == 80:
         port = 443
 
