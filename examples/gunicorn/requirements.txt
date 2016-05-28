@@ -1,0 +1,3 @@
+gunicorn
+-e ../../
+-e git+https://github.com/TestInABox/stackInABox#egg=stackinabox-0.10a

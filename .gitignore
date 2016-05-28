@@ -63,3 +63,7 @@ target/
 
 # Vim
 *.sw?
+
+# Example Environments
+*_example_app/
+*.pid

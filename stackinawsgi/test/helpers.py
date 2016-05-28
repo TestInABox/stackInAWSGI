@@ -28,7 +28,7 @@ class WsgiMock(object):
         Initialize the WsgiMock object
         """
         self.headers = CaseInsensitiveDict()
-        self.status = 550
+        self.status = "550 start_response() was not called"
         self.logger = logging.getLogger(__name__)
         self.logger.info('Created WSGI Mock - ID = {0}'.format(id(self)))
 

@@ -164,5 +164,5 @@ class TestWsgiApp(unittest.TestCase):
 
         wsgi_mock = WsgiMock()
         response_body = ''.join(the_app(environment, wsgi_mock))
-        self.assertEqual(wsgi_mock.status, 200)
+        self.assertEqual(wsgi_mock.status, '200')
         self.assertEqual(response_body, 'Hello')

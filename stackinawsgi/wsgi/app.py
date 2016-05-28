@@ -113,5 +113,8 @@ class App(object):
         request = Request(environ)
         response = Response()
         self.CallStackInABox(request, response)
-        start_response(response.status, response.headers)
+        start_response(
+            str(response.status),
+            [(k, v) for k, v in response.headers.items()]
+        )
         yield response.body
