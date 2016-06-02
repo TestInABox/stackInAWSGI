@@ -20,7 +20,7 @@ class App(object):
     A WSGI Application for running StackInABox under a WSGI host
     """
 
-    def __init__(self, services=[]):
+    def __init__(self, services=None):
         """
         Create the WSGI Application
 
@@ -29,15 +29,20 @@ class App(object):
         """
         self.stackinabox = StackInABox()
 
-        # for each StackInABox Service in the configuration,
-        # register with StackInABox
-        for service in services:
-            if isinstance(service, StackInABoxService):
-                self.RegisterWithStackInABox(service)
-            else:
-                raise TypeError(
-                    "Service is not a Stack-In-A-Box Service"
-                )
+        if services is not None:
+            # for each StackInABox Service in the configuration,
+            # register with StackInABox
+            for service in services:
+                if isinstance(service, StackInABoxService):
+                    self.RegisterWithStackInABox(service)
+                else:
+                    raise TypeError(
+                        "Service is not a Stack-In-A-Box Service"
+                    )
+        else:
+            logger.debug(
+                "No services registered on initialization"
+            )
 
     def RegisterWithStackInABox(self, service):
         """
