@@ -57,6 +57,14 @@ class Request(object):
         else:
             self.query = None
 
+        self.headers = {}
+        # build out the headers
+        for k, v in self.environment.items():
+            env_key = k.upper()
+            if env_key.startswith('HTTP_'):
+                header_key = k[len('HTTP_'):]
+                self.headers[header_key] = v
+
     @property
     def url(self):
         """

@@ -24,6 +24,14 @@ class TestWsgiRequest(unittest.TestCase):
         self.environment = make_environment(self)
         self.environment_https = make_environment(self, url_scheme='https')
 
+        self.example_headers = {
+            'x-example': 'here'
+        }
+        self.environment_headers = make_environment(
+            self,
+            headers=self.example_headers
+        )
+
     def tearDown(self):
         """
         Test Teardown
@@ -192,4 +200,16 @@ class TestWsgiRequest(unittest.TestCase):
         self.assertEqual(
             url,
             u"http://localhost/?happy=days"
+        )
+
+    def test_headers(self):
+        """
+        Validate the construction of headers
+        """
+        request = Request(self.environment_headers)
+        self.assertEqual(len(request.headers), 1)
+        self.assertIn('x-example', request.headers)
+        self.assertEqual(
+            request.headers['x-example'],
+            self.example_headers['x-example']
         )
