@@ -8,6 +8,8 @@ from threading import Lock
 
 from stackinabox.stack import StackInABox
 
+from stackinawsgi.exceptions import *
+
 
 logger = logging.getLogger(__name__)
 
@@ -30,18 +32,27 @@ class Session(object):
         logger.debug(
             'Creating wrapper for session: {0}'.format(session_id)
         )
+        if session_id is None:
+            raise InvalidSessionId('Session ID cannot be none')
+
+        if services is None:
+            raise InvalidServiceList('Services is empty')
+
         logger.debug(
             'Session {0} has {1} services'.format(
                 session_id,
                 len(services)
             )
         )
+
+        if len(services) == 0:
+            raise NoServicesProvided('No services configured')
+
         self.session_id = session_id
         self.services = services
         self.lock = Lock()
         self.stack = StackInABox()
         self.stack.base_url = self.session_id
-        self.session_id
         self.init_services()
 
     def init_services(self):

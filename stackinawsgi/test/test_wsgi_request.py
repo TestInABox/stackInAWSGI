@@ -1,8 +1,9 @@
 """
 Stack-In-A-WSGI: stackinawsgi.wsgi.request.Request testing
 """
-
 import unittest
+
+import ddt
 
 from stackinawsgi.wsgi.request import Request
 from stackinawsgi.test.helpers import (
@@ -10,6 +11,7 @@ from stackinawsgi.test.helpers import (
 )
 
 
+@ddt.ddt
 class TestWsgiRequest(unittest.TestCase):
     """
     Test the interaction of StackInAWSGI's Request object
@@ -37,6 +39,20 @@ class TestWsgiRequest(unittest.TestCase):
         Test Teardown
         """
         pass
+
+    @ddt.unpack
+    @ddt.data(
+        (None, u'/'),
+        ('/', u'/'),
+        ('/hello', u'/hello'),
+        ('/hello/', u'/hello')
+    )
+    def test_get_path(self, url, expected_url):
+        """
+        Test get_path normalization
+        """
+        result = Request.get_path(url)
+        self.assertEqual(result, expected_url)
 
     def test_construction(self):
         """
