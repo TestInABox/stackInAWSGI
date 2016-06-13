@@ -9,6 +9,7 @@ import uuid
 
 from stackinabox.services.service import StackInABoxService
 
+from stackinawsgi.exceptions import *
 from .session import Session
 
 
@@ -102,6 +103,105 @@ class StackInAWsgiSessionManager(StackInABoxService):
         """
         self.__base_url = value
 
+    def register_service(self, service):
+        """
+        Add the service to the global list of services to be instantiated into
+        each newly created session
+
+        :param object-type service: an uninstantiated object what is derived
+            from :obj:`StackInABoxService`. When a session is created then it
+            will be instantiated and added to the StackInABox Service.
+        """
+        logger.debug(
+            'Adding service'
+        )
+        self.services.append(service)
+
+    def create_session(self, session_id=None):
+        """
+        Create a new session and return its uuid
+
+        :param text_type session_id: optional session id to create, if not
+            provided then one will be created.
+
+        :returns: text_type with the session id
+        """
+        logger.debug(
+            'Requesting creation of session. Optional Session Id: {0}'.format(
+                session_id
+            )
+        )
+        if session_id is None:
+            logger.debug(
+                'Creating new session id'
+            )
+            session_id = str(uuid.uuid4())
+
+        logger.debug(
+            'Session id: {0}'.format(
+                session_id
+            )
+        )
+
+        if session_id not in global_sessions:
+            logger.debug(
+                'Creating new session for session id {0}'.format(
+                    session_id
+                )
+            )
+            global_sessions[session_id] = Session(
+                session_id,
+                self.services
+            )
+
+        return session_id
+
+    def reset_session(self, session_id):
+        """
+        Recreate the session so it starts from scratch
+
+        :raises: InvalidSessionId if the Session ID is not found
+        """
+        logger.debug(
+            'Resetting Session {0}'.format(
+                session_id
+            )
+        )
+        if session_id in global_sessions:
+            logger.debug(
+                'Removing Session {0}'.format(
+                    session_id
+                )
+            )
+            del global_sessions[session_id]
+            logger.debug(
+                'Re-creating Session {0}'.format(
+                    session_id
+                )
+            )
+            self.create_session(session_id=session_id)
+            logger.debug(
+                'Reset of Session {0} Completed'.format(
+                    session_id
+                )
+            )
+
+        else:
+            raise InvalidSessionId('Invalid Session ID')
+
+    def remove_session(self, session_id):
+        """
+        Remove the session
+
+        :param text_type session_id: session id to remove
+
+        :raises: InvalidSessionId if session id is not found
+        """
+        if session_id in global_sessions:
+            del global_sessions[session_id]
+        else:
+            raise InvalidSessionId('Invalid Session ID')
+
     def request(self, method, request, uri, headers):
         """
         Override the standard handler in order to redirect to the
@@ -170,102 +270,3 @@ class StackInAWsgiSessionManager(StackInABoxService):
             )
             # Report an unknown session
             return (594, headers, 'StackInAWSGI - Unknown Session')
-
-    def register_service(self, service):
-        """
-        Add the service to the global list of services to be instantiated into
-        each newly created session
-
-        :param object-type service: an uninstantiated object what is derived
-            from :obj:`StackInABoxService`. When a session is created then it
-            will be instantiated and added to the StackInABox Service.
-        """
-        logger.debug(
-            'Adding service'
-        )
-        self.services.append(service)
-
-    def reset_session(self, session_id):
-        """
-        Recreate the session so it starts from scratch
-
-        :raises: KeyError if the Session ID is not found
-        """
-        logger.debug(
-            'Resetting Session {0}'.format(
-                session_id
-            )
-        )
-        if session_id in global_sessions:
-            logger.debug(
-                'Removing Session {0}'.format(
-                    session_id
-                )
-            )
-            del global_sessions[session_id]
-            logger.debug(
-                'Re-creating Session {0}'.format(
-                    session_id
-                )
-            )
-            self.create_session(session_id=session_id)
-            logger.debug(
-                'Reset of Session {0} Completed'.format(
-                    session_id
-                )
-            )
-
-        else:
-            raise KeyError('Invalid Session ID')
-
-    def create_session(self, session_id=None):
-        """
-        Create a new session and return its uuid
-
-        :param text_type session_id: optional session id to create, if not
-            provided then one will be created.
-
-        :returns: text_type with the session id
-        """
-        logger.debug(
-            'Requesting creation of session. Optional Session Id: {0}'.format(
-                session_id
-            )
-        )
-        if session_id is None:
-            logger.debug(
-                'Creating new session id'
-            )
-            session_id = str(uuid.uuid4())
-
-        logger.debug(
-            'Session id: {0}'.format(
-                session_id
-            )
-        )
-
-        if session_id not in global_sessions:
-            logger.debug(
-                'Creating new session for session id {0}'.format(
-                    session_id
-                )
-            )
-            global_sessions[session_id] = Session(
-                session_id,
-                self.services
-            )
-
-        return session_id
-
-    def remove_session(self, session_id):
-        """
-        Remove the session
-
-        :param text_type session_id: session id to remove
-
-        :raises: Key Error if session id is not found
-        """
-        if session_id in global_sessions:
-            del global_sessions[session_id]
-        else:
-            raise KeyError('Invalid Session ID')

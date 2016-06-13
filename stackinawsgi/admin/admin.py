@@ -3,6 +3,8 @@ Stack-In-A-WSGI: StackInAWsgiAdmin
 """
 from stackinabox.services.service import StackInABoxService
 
+from stackinawsgi.exceptions import *
+
 
 class StackInAWsgiAdmin(StackInABoxService):
     """
@@ -117,7 +119,7 @@ class StackInAWsgiAdmin(StackInABoxService):
                 )
             )
 
-        except KeyError as ex:
+        except InvalidSessionId as ex:
             return (404, headers, str(ex))
         else:
             return (204, headers, '')
@@ -148,7 +150,7 @@ class StackInAWsgiAdmin(StackInABoxService):
                 )
             )
 
-        except KeyError as ex:
+        except InvalidSessionId as ex:
             return (404, headers, str(ex))
         else:
             return (205, headers, '')
