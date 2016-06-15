@@ -8,7 +8,11 @@ from threading import Lock
 
 from stackinabox.stack import StackInABox
 
-from stackinawsgi.exceptions import *
+from stackinawsgi.exceptions import (
+    InvalidSessionId,
+    InvalidServiceList,
+    NoServicesProvided
+)
 
 
 logger = logging.getLogger(__name__)

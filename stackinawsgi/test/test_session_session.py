@@ -11,7 +11,11 @@ import mock
 from stackinabox.stack import StackInABox
 from stackinabox.services.hello import HelloService
 
-from stackinawsgi.exceptions import *
+from stackinawsgi.exceptions import (
+    InvalidSessionId,
+    InvalidServiceList,
+    NoServicesProvided
+)
 from stackinawsgi.session.session import Session
 
 
@@ -47,7 +51,7 @@ class TestSessionSession(unittest.TestCase):
         (None, InvalidServiceList),
     )
     def test_construction_with_invalid_services(self, invalid_service_value,
-            expected_exception):
+                                                expected_exception):
         """
         test construction of a session object with a series of invalid values
         """

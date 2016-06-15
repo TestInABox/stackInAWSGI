@@ -3,15 +3,11 @@ Stack-In-A-WSGI: stackinawsgi.admin.admin.StackInAWsgiSessionManager
 """
 
 import unittest
-import uuid
-
-import mock
 
 from stackinabox.services.service import StackInABoxService
 from stackinabox.services.hello import HelloService
 
 from stackinawsgi.admin.admin import StackInAWsgiAdmin
-from stackinawsgi.exceptions import *
 from stackinawsgi.session.service import (
     global_sessions,
     StackInAWsgiSessionManager
@@ -19,6 +15,7 @@ from stackinawsgi.session.service import (
 from stackinawsgi.wsgi.request import Request
 from stackinawsgi.wsgi.response import Response
 from stackinawsgi.test.helpers import make_environment
+
 
 class TestSessionManager(unittest.TestCase):
     """
@@ -45,7 +42,7 @@ class TestSessionManager(unittest.TestCase):
         """
         test basic construction of the admin interface
         """
-        admin = StackInAWsgiAdmin(self.manager, self.base_uri) 
+        admin = StackInAWsgiAdmin(self.manager, self.base_uri)
         self.assertIsInstance(admin, StackInABoxService)
         self.assertEqual(id(self.manager), id(admin.manager))
         self.assertTrue(admin.base_uri.startswith(self.base_uri))
@@ -68,7 +65,6 @@ class TestSessionManager(unittest.TestCase):
         test extracting the session-id from the headers
         """
         admin = StackInAWsgiAdmin(self.manager, self.base_uri)
-        session_id = 'some-session-id'
         headers = {}
 
         extracted_session_id = admin.helper_get_session_id(headers)

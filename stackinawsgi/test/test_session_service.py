@@ -5,12 +5,12 @@ Stack-In-A-WSGI: stackinawsgi.session.service.StackInAWsgiSessionManager
 import unittest
 import uuid
 
-import mock
-
 from stackinabox.services.service import StackInABoxService
 from stackinabox.services.hello import HelloService
 
-from stackinawsgi.exceptions import *
+from stackinawsgi.exceptions import (
+    InvalidSessionId
+)
 from stackinawsgi.session.service import (
     global_sessions,
     StackInAWsgiSessionManager
@@ -18,6 +18,7 @@ from stackinawsgi.session.service import (
 from stackinawsgi.wsgi.request import Request
 from stackinawsgi.wsgi.response import Response
 from stackinawsgi.test.helpers import make_environment
+
 
 class TestSessionManager(unittest.TestCase):
     """
@@ -224,7 +225,6 @@ class TestSessionManager(unittest.TestCase):
         """
         manager = StackInAWsgiSessionManager()
         manager.register_service(HelloService)
-        session_id = manager.create_session()
 
         uri = u'/some-invalid-id/hello/'
         environment = make_environment(
@@ -254,7 +254,6 @@ class TestSessionManager(unittest.TestCase):
         """
         manager = StackInAWsgiSessionManager()
         manager.register_service(HelloService)
-        session_id = manager.create_session()
 
         uri = u'/'
         environment = make_environment(

@@ -5,7 +5,7 @@ import logging
 
 from stackinabox.services.service import StackInABoxService
 
-from stackinawsgi.exceptions import *
+from stackinawsgi.exceptions import InvalidSessionId
 
 
 logger = logging.getLogger(__name__)
