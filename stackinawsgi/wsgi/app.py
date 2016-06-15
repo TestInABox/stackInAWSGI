@@ -129,7 +129,7 @@ class App(object):
             request.method,
             request,
             request.url,
-            response.headers
+            request.headers
         )
         response.from_stackinabox(
             result[0],

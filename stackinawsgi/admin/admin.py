@@ -1,9 +1,14 @@
 """
 Stack-In-A-WSGI: StackInAWsgiAdmin
 """
+import logging
+
 from stackinabox.services.service import StackInABoxService
 
 from stackinawsgi.exceptions import *
+
+
+logger = logging.getLogger(__name__)
 
 
 class StackInAWsgiAdmin(StackInABoxService):
@@ -22,7 +27,10 @@ class StackInAWsgiAdmin(StackInABoxService):
         """
         super(StackInAWsgiAdmin, self).__init__('admin')
         self.manager = session_manager
-        self.base_uri = base_uri
+        if base_uri.startswith('/'):
+            self.base_uri = base_uri[1:]
+        else:
+            self.base_uri = base_uri
         self.register(
             StackInABoxService.DELETE, '/', StackInAWsgiAdmin.remove_session
         )
@@ -47,7 +55,10 @@ class StackInAWsgiAdmin(StackInABoxService):
 
         if 'x-session-id' in headers:
             session_id = headers['x-session-id']
+        else:
+            logger.debug('x-session-id not in headers')
 
+        logger.debug('Found Session Id: {0}'.format(session_id))
         return session_id
 
     def helper_get_uri(self, session_id):
@@ -82,10 +93,18 @@ class StackInAWsgiAdmin(StackInABoxService):
                 X-Session-ID header contains the session-id
                 Location header contains the URL for the session
         """
+        requested_session_id = self.helper_get_session_id(
+            headers
+        )
+        logging.debug(
+            'Requested Session Id: {0}'.format(requested_session_id)
+        )
+
         session_id = self.manager.create_session(
-            self.helper_get_session_id(
-                headers
-            )
+            requested_session_id
+        )
+        logging.debug(
+            'Created Session Id: {0}'.format(session_id)
         )
 
         headers['x-session-id'] = session_id
@@ -167,7 +186,7 @@ class StackInAWsgiAdmin(StackInABoxService):
 
         HTTP Request:
             GET /admin/
-                X-Session-ID: (Optional) Session-ID to reset
+                X-Session-ID: (Required) Session-ID to reset
 
         HTTP Responses:
             500 - Not Implemented

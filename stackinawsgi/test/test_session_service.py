@@ -208,7 +208,7 @@ class TestSessionManager(unittest.TestCase):
             request.method,
             request,
             uri,
-            response.headers
+            request.headers
         )
         response.from_stackinabox(
             result[0],
@@ -239,7 +239,7 @@ class TestSessionManager(unittest.TestCase):
             request.method,
             request,
             uri,
-            response.headers
+            request.headers
         )
         response.from_stackinabox(
             result[0],
@@ -269,7 +269,7 @@ class TestSessionManager(unittest.TestCase):
             request.method,
             request,
             uri,
-            response.headers
+            request.headers
         )
         response.from_stackinabox(
             result[0],
