@@ -90,6 +90,9 @@ class TestWsgiApp(unittest.TestCase):
         with self.assertRaises(TypeError):
             App([InvalidService()])
 
+        with self.assertRaises(TypeError):
+            App([InvalidService])
+
     def test_reset(self):
         """
         Reset a StackInAWSGI
