@@ -1,12 +1,17 @@
 """
 Stack-In-A-WSGI Request Model
 """
+import logging
+
 import six
 
 if six.PY2:
     from urllib import quote
 else:
     from urllib.parse import quote
+
+
+logger = logging.getLogger(__name__)
 
 
 class Request(object):
@@ -56,6 +61,22 @@ class Request(object):
             self.query = self.environment['QUERY_STRING']
         else:
             self.query = None
+
+        self.headers = {}
+        # build out the headers
+        for k, v in self.environment.items():
+            env_key = k.upper()
+            if env_key.startswith('HTTP_'):
+                header_key = k[len('HTTP_'):]
+                self.headers[header_key] = v
+                logger.debug(
+                    'Headers[{0} -> {1}] = {2} -> {3}'.format(
+                        k,
+                        header_key,
+                        v,
+                        self.headers[header_key]
+                    )
+                )
 
     @property
     def url(self):

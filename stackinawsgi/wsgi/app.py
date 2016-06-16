@@ -4,9 +4,13 @@ Stack-In-A-WSGI Application
 from __future__ import absolute_import
 
 import logging
+from collections import Iterable
 
 from .request import Request
 from .response import Response
+
+from stackinawsgi.session.service import StackInAWsgiSessionManager
+from stackinawsgi.admin.admin import StackInAWsgiAdmin
 
 from stackinabox.services.service import StackInABoxService
 from stackinabox.stack import StackInABox
@@ -28,17 +32,43 @@ class App(object):
             StackInABox.
         """
         self.stackinabox = StackInABox()
+        self.stack_service = StackInAWsgiSessionManager()
+        self.admin_service = StackInAWsgiAdmin(
+            self.stack_service,
+            'http://localhost/stackinabox/'
+        )
+        self.stackinabox.register(self.admin_service)
+        self.stackinabox.register(self.stack_service)
 
+        def __check_service(service_object):
+            """
+            Simple wrapper to check whether an object provide by the caller is
+            a StackInABoxService by creating an instance
+            """
+            svc = service_object()
+            if not isinstance(svc, StackInABoxService):
+                raise TypeError(
+                    "Service is not a Stack-In-A-Box Service"
+                )
+
+        # if the caller does not provide any services then just log it
+        # to keep from user confusion
         if services is not None:
-            # for each StackInABox Service in the configuration,
-            # register with StackInABox
-            for service in services:
-                if isinstance(service, StackInABoxService):
+
+            # Allow the caller to provide either an iterable of services to
+            # to provide to the session or to provide a single service object
+            if isinstance(services, Iterable):
+                # for each service verify it is a StackInABoxService
+                for service in services:
+                    __check_service(service)
                     self.RegisterWithStackInABox(service)
-                else:
-                    raise TypeError(
-                        "Service is not a Stack-In-A-Box Service"
-                    )
+
+            else:
+                # if it's not an iterable - e.g a single object - then
+                # just check the variable itself
+                __check_service(services)
+                self.RegisterWithStackInABox(services)
+
         else:
             logger.debug(
                 "No services registered on initialization"
@@ -51,13 +81,13 @@ class App(object):
         :param :obj:`StackInABoxService` service: the service to register with
             StackInABox
         """
-        self.stackinabox.register(service)
+        self.stack_service.register_service(service)
 
-    def ResetStackInABox(self):
+    def ResetStackInABox(self, session_uuid):
         """
         Reset StackInABox to its default state
         """
-        self.stackinabox.reset()
+        self.stack_service.reset_session(session_uuid)
 
     def StackInABoxHoldOnto(self, name, obj):
         """
@@ -92,11 +122,14 @@ class App(object):
         :param :obj:`Response` response: the :obj:`Response` object to use
             for the output
         """
+        # Parse the URL and determine where it's going
+        # /stackinabox/<session>/<service>/<normal user path>
+        # /admin for StackInAWSGI administrative functionality
         result = self.stackinabox.call(
             request.method,
             request,
             request.url,
-            response.headers
+            request.headers
         )
         response.from_stackinabox(
             result[0],

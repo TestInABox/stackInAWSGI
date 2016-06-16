@@ -28,14 +28,25 @@ class TestWsgiApp(unittest.TestCase):
         Test setup
         """
         self.apps = [
-            HelloService()
+            HelloService
         ]
 
     def tearDown(self):
         """
         Test Teardown
         """
-        pass
+        StackInABox.reset_services()
+
+    def helper_make_session(self, the_app):
+        """
+        """
+        self.session_id = the_app.stack_service.create_session()
+        self.session_uri = the_app.admin_service.helper_get_uri(
+            self.session_id
+        )
+        self.session_id_uri = u'/stackinabox/{0}'.format(
+            self.session_id
+        )
 
     def test_construction(self):
         """
@@ -44,7 +55,7 @@ class TestWsgiApp(unittest.TestCase):
         the_app = App()
         self.assertTrue(hasattr(the_app, 'stackinabox'))
         self.assertIsInstance(the_app.stackinabox, StackInABox)
-        self.assertEqual(len(the_app.stackinabox.services), 0)
+        self.assertEqual(len(the_app.stack_service.services), 0)
 
     def test_construction_with_service(self):
         """
@@ -53,12 +64,23 @@ class TestWsgiApp(unittest.TestCase):
         the_app = App(self.apps)
         self.assertTrue(hasattr(the_app, 'stackinabox'))
         self.assertIsInstance(the_app.stackinabox, StackInABox)
-        self.assertEqual(len(the_app.stackinabox.services), 1)
+        self.assertEqual(len(the_app.stack_service.services), 1)
         for an_app in self.apps:
-            self.assertIn(an_app.name, the_app.stackinabox.services)
-            self.assertEqual(
-                an_app,
-                the_app.stackinabox.services[an_app.name][1]
+            self.assertTrue(
+                True in [x == an_app for x in the_app.stack_service.services]
+            )
+
+    def test_construction_with_service_non_iterable(self):
+        """
+        Basic App creation with a StackInABoxService
+        """
+        the_app = App(self.apps[0])
+        self.assertTrue(hasattr(the_app, 'stackinabox'))
+        self.assertIsInstance(the_app.stackinabox, StackInABox)
+        self.assertEqual(len(the_app.stack_service.services), 1)
+        for an_app in self.apps:
+            self.assertTrue(
+                True in [x == an_app for x in the_app.stack_service.services]
             )
 
     def test_construction_with_invalid_service(self):
@@ -68,6 +90,9 @@ class TestWsgiApp(unittest.TestCase):
         with self.assertRaises(TypeError):
             App([InvalidService()])
 
+        with self.assertRaises(TypeError):
+            App([InvalidService])
+
     def test_reset(self):
         """
         Reset a StackInAWSGI
@@ -75,9 +100,10 @@ class TestWsgiApp(unittest.TestCase):
         the_app = App(self.apps)
         self.assertTrue(hasattr(the_app, 'stackinabox'))
         self.assertIsInstance(the_app.stackinabox, StackInABox)
-        self.assertEqual(len(the_app.stackinabox.services), 1)
-        the_app.ResetStackInABox()
-        self.assertEqual(len(the_app.stackinabox.services), 0)
+        self.assertEqual(len(the_app.stack_service.services), 1)
+        self.helper_make_session(the_app)
+        the_app.ResetStackInABox(self.session_id)
+        self.assertEqual(len(the_app.stack_service.services), 1)
 
     def test_holdonto(self):
         """
@@ -141,9 +167,14 @@ class TestWsgiApp(unittest.TestCase):
         will the response from the StackInABoxService by directly calling into
         the StackInAWSGI handler
         """
-        the_app = App([HelloService()])
+        the_app = App([HelloService])
+        self.helper_make_session(the_app)
         the_app.StackInABoxUriUpdate('localhost')
-        environment = make_environment(self, method='GET', path=u'/hello/')
+        environment = make_environment(
+            self,
+            method='GET',
+            path=u'{0}/hello/'.format(self.session_id_uri)
+        )
 
         request = Request(environment)
         response = Response()
@@ -158,9 +189,14 @@ class TestWsgiApp(unittest.TestCase):
         will the response from the StackInABoxService by into StackInAWSGI as
         a WSGI Callable per PEP-3333.
         """
-        the_app = App([HelloService()])
+        the_app = App([HelloService])
+        self.helper_make_session(the_app)
         the_app.StackInABoxUriUpdate('localhost')
-        environment = make_environment(self, method='GET', path=u'/hello/')
+        environment = make_environment(
+            self,
+            method='GET',
+            path=u'{0}/hello/'.format(self.session_id_uri)
+        )
 
         wsgi_mock = WsgiMock()
         response_body = ''.join(the_app(environment, wsgi_mock))
