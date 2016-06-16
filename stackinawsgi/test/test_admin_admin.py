@@ -1,7 +1,6 @@
 """
 Stack-In-A-WSGI: stackinawsgi.admin.admin.StackInAWsgiSessionManager
 """
-
 import unittest
 
 from stackinabox.services.service import StackInABoxService
@@ -46,6 +45,16 @@ class TestSessionManager(unittest.TestCase):
         self.assertIsInstance(admin, StackInABoxService)
         self.assertEqual(id(self.manager), id(admin.manager))
         self.assertTrue(admin.base_uri.startswith(self.base_uri))
+
+    def test_construction_alternate_url(self):
+        """
+        test basic construction of the admin interface
+        """
+        base_uri = '/hello'
+        admin = StackInAWsgiAdmin(self.manager, base_uri)
+        self.assertIsInstance(admin, StackInABoxService)
+        self.assertEqual(id(self.manager), id(admin.manager))
+        self.assertTrue(admin.base_uri.startswith(base_uri[1:]))
 
     def test_helper_get_session_id(self):
         """
