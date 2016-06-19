@@ -31,6 +31,10 @@ class StackInAWsgiAdmin(StackInABoxService):
             self.base_uri = base_uri[1:]
         else:
             self.base_uri = base_uri
+
+        if self.base_uri.endswith('/'):
+            self.base_uri = self.base_uri[:-1]
+
         self.register(
             StackInABoxService.DELETE, '/', StackInAWsgiAdmin.remove_session
         )
@@ -68,6 +72,12 @@ class StackInAWsgiAdmin(StackInABoxService):
         :param text_type session_id: session-id for URL is for
         :returns: text_type, the URL for the session-id
         """
+        logger.debug(
+            'Helper Get URI - Base URI: "{0}", Session ID: "{1}"'.format(
+                self.base_uri,
+                session_id
+            )
+        )
         return '{0}/{1}/'.format(
             self.base_uri,
             session_id
