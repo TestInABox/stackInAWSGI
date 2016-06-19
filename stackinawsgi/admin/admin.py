@@ -27,13 +27,7 @@ class StackInAWsgiAdmin(StackInABoxService):
         """
         super(StackInAWsgiAdmin, self).__init__('admin')
         self.manager = session_manager
-        if base_uri.startswith('/'):
-            self.base_uri = base_uri[1:]
-        else:
-            self.base_uri = base_uri
-
-        if self.base_uri.endswith('/'):
-            self.base_uri = self.base_uri[:-1]
+        self.base_uri = base_uri
 
         self.register(
             StackInABoxService.DELETE, '/', StackInAWsgiAdmin.remove_session
@@ -46,6 +40,31 @@ class StackInAWsgiAdmin(StackInABoxService):
         )
         self.register(
             StackInABoxService.GET, '/', StackInAWsgiAdmin.get_session_info
+        )
+
+    @property
+    def base_uri(self):
+        """
+        Base URI of the WSGI App
+        """
+        return self.__base_uri
+
+    @base_uri.setter
+    def base_uri(self, value):
+        """
+        Update the Base URI of the WSGI App
+        """
+        if value.startswith('/'):
+            value = value[1:]
+
+        if value.endswith('/'):
+            value = value[:-1]
+
+        self.__base_uri = value
+        logger.debug(
+            'Received Base URI: {0}'.format(
+                self.__base_uri
+            )
         )
 
     def helper_get_session_id(self, headers):
