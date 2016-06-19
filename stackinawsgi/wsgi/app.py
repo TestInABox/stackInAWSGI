@@ -112,6 +112,7 @@ class App(object):
         Update StackInABox to use a new URI value.
         """
         self.stackinabox.base_url = uri
+        self.admin_service.base_uri = uri
 
     def CallStackInABox(self, request, response):
         """

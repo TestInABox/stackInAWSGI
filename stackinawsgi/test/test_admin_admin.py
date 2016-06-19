@@ -46,7 +46,17 @@ class TestSessionManager(unittest.TestCase):
         self.assertEqual(id(self.manager), id(admin.manager))
         self.assertTrue(admin.base_uri.startswith(self.base_uri))
 
-    def test_construction_alternate_url(self):
+    def test_property_base_uri_with_no_slash(self):
+        """
+        test basic construction of the admin interface
+        """
+        base_uri = 'hello'
+        admin = StackInAWsgiAdmin(self.manager, base_uri)
+        self.assertIsInstance(admin, StackInABoxService)
+        self.assertEqual(id(self.manager), id(admin.manager))
+        self.assertTrue(admin.base_uri.startswith(base_uri))
+
+    def test_property_base_uri_start_with_slash(self):
         """
         test basic construction of the admin interface
         """
@@ -55,6 +65,15 @@ class TestSessionManager(unittest.TestCase):
         self.assertIsInstance(admin, StackInABoxService)
         self.assertEqual(id(self.manager), id(admin.manager))
         self.assertTrue(admin.base_uri.startswith(base_uri[1:]))
+
+    def test_property_base_uri_ends_with_slash(self):
+        """
+        """
+        base_uri = 'hello/'
+        admin = StackInAWsgiAdmin(self.manager, base_uri)
+        self.assertIsInstance(admin, StackInABoxService)
+        self.assertEqual(id(self.manager), id(admin.manager))
+        self.assertTrue(admin.base_uri.startswith(base_uri[:-1]))
 
     def test_helper_get_session_id(self):
         """
