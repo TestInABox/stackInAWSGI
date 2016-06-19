@@ -67,7 +67,6 @@ class StackInAWsgiAdmin(StackInABoxService):
             )
         )
 
-
     def helper_get_session_id(self, headers):
         """
         Helper to retrieve the session id or build a new one
