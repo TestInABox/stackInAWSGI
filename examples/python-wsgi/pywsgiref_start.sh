@@ -5,7 +5,7 @@
 #       each worker will have its own session data completely
 #       independent of all other workers.
 WORKER_COUNT=1
-VENV_DIR="gunicorn_example_app"
+VENV_DIR="pywsgiref_example_app"
 
 for ARG in ${@}
 do
@@ -48,4 +48,4 @@ if [ -v INITIALIZE_VENV ]; then
 fi
 
 echo "Starting new instances..."
-gunicorn -b 127.0.0.1:8081 -w ${WORKER_COUNT} --error-logfile app-errors.log --access-logfile app-access.log --log-level DEBUG -D app:app
+python wsgiserver.py 
