@@ -5,6 +5,8 @@ from __future__ import print_function
 
 import unittest
 
+import ddt
+
 from stackinabox.services.hello import HelloService
 from stackinabox.stack import StackInABox
 
@@ -18,6 +20,7 @@ from stackinawsgi.test.helpers import (
 )
 
 
+@ddt.ddt
 class TestWsgiApp(unittest.TestCase):
     """
     Stack-In-A-WSGI's wsgi.app.App test suite
@@ -200,5 +203,25 @@ class TestWsgiApp(unittest.TestCase):
 
         wsgi_mock = WsgiMock()
         response_body = ''.join(the_app(environment, wsgi_mock))
-        self.assertEqual(wsgi_mock.status, '200')
+        self.assertEqual(wsgi_mock.status, '200 OK')
         self.assertEqual(response_body, 'Hello')
+
+    @ddt.data(
+        (160, "Unknown Informational Status"),
+        (260, "Unknown Success Status"),
+        (360, "Unknown Redirection Status"),
+        (460, "Unknown Client Error"),
+        (560, "Unknown Server Error"),
+        (660, "Unknown Status")
+    )
+    @ddt.unpack
+    def test_response_for_status(self, status, expected_value):
+        """
+        Validate that the generic Unknown status text is returned for each
+        range of values.
+        """
+        the_app = App([HelloService])
+        self.assertEqual(
+            the_app.response_for_status(status),
+            expected_value
+        )
