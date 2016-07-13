@@ -70,6 +70,9 @@ class TestSessionSession(unittest.TestCase):
         self.assertTrue(isinstance(session.stack, StackInABox))
         self.assertEqual(session.session_id, session.stack.base_url)
         self.assertEqual(len(self.services), len(session.stack.services))
+        self.assertEqual(0, session.access_count)
+        self.assertEqual(session.created_at, session.last_accessed_at)
+        self.assertEqual(0, len(session.status_tracker))
         tuple_services = tuple(self.services)
         for _, v in session.stack.services.items():
             _, svc = v
@@ -80,6 +83,8 @@ class TestSessionSession(unittest.TestCase):
         Test Base URL
         """
         def validate(s, b):
+            self.assertEqual(0, s.access_count)
+            self.assertEqual(s.created_at, s.last_accessed_at)
             self.assertEqual(
                 b,
                 s.base_url
@@ -108,10 +113,17 @@ class TestSessionSession(unittest.TestCase):
             return list_ids
 
         session = Session(self.session_id, self.services)
+        self.assertEqual(0, session.access_count)
+        self.assertEqual(session.created_at, session.last_accessed_at)
+        self.assertEqual(0, len(session.status_tracker))
 
         original_session_ids = get_service_instance_info(session)
 
         session.reset()
+
+        self.assertEqual(1, session.access_count)
+        self.assertLess(session.created_at, session.last_accessed_at)
+        self.assertEqual(0, len(session.status_tracker))
 
         new_session_ids = get_service_instance_info(session)
 
@@ -123,74 +135,106 @@ class TestSessionSession(unittest.TestCase):
         """
         test calling into the session
         """
+        result = (200, {}, "we're all good")
         mock_session_stack_call = mock.Mock()
-        mock_session_stack_call.return_value = True
+        mock_session_stack_call.return_value = result
 
         session = Session(self.session_id, self.services)
         session.stack.call = mock_session_stack_call
+        self.assertEqual(0, session.access_count)
+        self.assertEqual(session.created_at, session.last_accessed_at)
+        self.assertEqual(0, len(session.status_tracker))
 
         self.assertEqual(mock_session_stack_call.call_count, 0)
-        self.assertTrue(session.call('hello', 'world'))
+        self.assertEqual(session.call('hello', 'world'), result)
         self.assertTrue(mock_session_stack_call.called)
         self.assertEqual(mock_session_stack_call.call_count, 1)
         self.assertEqual(
             mock_session_stack_call.call_args,
             (('hello', 'world'),)
         )
+        self.assertEqual(1, session.access_count)
+        self.assertLess(session.created_at, session.last_accessed_at)
+        self.assertIn(result[0], session.status_tracker)
+        self.assertEqual(1, session.status_tracker[result[0]])
 
     def test_try_handle_route(self):
         """
         test calling the session request handler
         """
+        result = (200, {}, "we're all good")
         mock_session_try_handle_route = mock.Mock()
-        mock_session_try_handle_route.return_value = True
+        mock_session_try_handle_route.return_value = result
 
         session = Session(self.session_id, self.services)
         session.stack.try_handle_route = mock_session_try_handle_route
+        self.assertEqual(0, session.access_count)
+        self.assertEqual(session.created_at, session.last_accessed_at)
+        self.assertEqual(0, len(session.status_tracker))
 
         self.assertEqual(mock_session_try_handle_route.call_count, 0)
-        self.assertTrue(session.try_handle_route('hello', 'world'))
+        self.assertEqual(session.try_handle_route('hello', 'world'), result)
         self.assertTrue(mock_session_try_handle_route.called)
         self.assertEqual(mock_session_try_handle_route.call_count, 1)
         self.assertEqual(
             mock_session_try_handle_route.call_args,
             (('hello', 'world'),)
         )
+        self.assertEqual(1, session.access_count)
+        self.assertLess(session.created_at, session.last_accessed_at)
+        self.assertIn(result[0], session.status_tracker)
+        self.assertEqual(1, session.status_tracker[result[0]])
 
     def test_request(self):
         """
         test calling the session request handler
         """
+        result = (200, {}, "we're all good")
         mock_session_request = mock.Mock()
-        mock_session_request.return_value = True
+        mock_session_request.return_value = result
 
         session = Session(self.session_id, self.services)
         session.stack.request = mock_session_request
+        self.assertEqual(0, session.access_count)
+        self.assertEqual(session.created_at, session.last_accessed_at)
+        self.assertEqual(0, len(session.status_tracker))
 
         self.assertEqual(mock_session_request.call_count, 0)
-        self.assertTrue(session.request('hello', 'world'))
+        self.assertEqual(session.request('hello', 'world'), result)
         self.assertTrue(mock_session_request.called)
         self.assertEqual(mock_session_request.call_count, 1)
         self.assertEqual(
             mock_session_request.call_args,
             (('hello', 'world'),)
         )
+        self.assertEqual(1, session.access_count)
+        self.assertLess(session.created_at, session.last_accessed_at)
+        self.assertIn(result[0], session.status_tracker)
+        self.assertEqual(1, session.status_tracker[result[0]])
 
     def test_sub_request(self):
         """
         test calling the session sub_request handler
         """
+        result = (200, {}, "we're all good")
         mock_session_sub_request = mock.Mock()
-        mock_session_sub_request.return_value = True
+        mock_session_sub_request.return_value = result
 
         session = Session(self.session_id, self.services)
         session.stack.sub_request = mock_session_sub_request
+        self.assertEqual(0, session.access_count)
+        self.assertEqual(session.created_at, session.last_accessed_at)
+        self.assertEqual(0, len(session.status_tracker))
 
         self.assertEqual(mock_session_sub_request.call_count, 0)
-        self.assertTrue(session.sub_request('hello', 'world'))
+        self.assertEqual(session.sub_request('hello', 'world'), result)
         self.assertTrue(mock_session_sub_request.called)
         self.assertEqual(mock_session_sub_request.call_count, 1)
         self.assertEqual(
             mock_session_sub_request.call_args,
             (('hello', 'world'),)
         )
+        self.assertEqual(1, session.access_count)
+        self.assertLess(session.created_at, session.last_accessed_at)
+        self.assertIn(result[0], session.status_tracker)
+        self.assertEqual(1, session.status_tracker[result[0]])

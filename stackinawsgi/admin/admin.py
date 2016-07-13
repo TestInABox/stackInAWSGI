@@ -1,11 +1,17 @@
 """
 Stack-In-A-WSGI: StackInAWsgiAdmin
 """
+import json
 import logging
+import re
 
 from stackinabox.services.service import StackInABoxService
 
 from stackinawsgi.exceptions import InvalidSessionId
+from stackinawsgi.session.service import (
+    global_sessions,
+    session_regex
+)
 
 
 logger = logging.getLogger(__name__)
@@ -30,6 +36,12 @@ class StackInAWsgiAdmin(StackInABoxService):
         self.base_uri = base_uri
 
         self.register(
+            StackInABoxService.GET,
+            re.compile('^{0}$'.format(session_regex)),
+            StackInAWsgiAdmin.get_session_info
+        )
+
+        self.register(
             StackInABoxService.DELETE, '/', StackInAWsgiAdmin.remove_session
         )
         self.register(
@@ -39,7 +51,7 @@ class StackInAWsgiAdmin(StackInABoxService):
             StackInABoxService.PUT, '/', StackInAWsgiAdmin.reset_session
         )
         self.register(
-            StackInABoxService.GET, '/', StackInAWsgiAdmin.get_session_info
+            StackInABoxService.GET, '/', StackInAWsgiAdmin.get_sessions
         )
 
     @property
@@ -82,6 +94,30 @@ class StackInAWsgiAdmin(StackInABoxService):
             logger.debug('x-session-id not in headers')
 
         logger.debug('Found Session Id: {0}'.format(session_id))
+        return session_id
+
+    def helper_get_session_id_from_uri(self, uri):
+        """
+        Helper to retrieve the Session-ID FROM a URI
+
+        :param text_type uri: complete URI
+        :returns: text_type with the session-id
+        """
+        matcher = re.compile(session_regex)
+        try:
+            matched_groups = matcher.match(uri)
+            session_id = matched_groups.group(0)[1:]
+            logger.debug(
+                'Helper Get Session From URI - URI: "{0}", '
+                'Session ID: "{1}"'.format(
+                    uri,
+                    session_id
+                )
+            )
+
+        except Exception:
+            logger.exception('Failed to find session-id')
+            session_id = None
         return session_id
 
     def helper_get_uri(self, session_id):
@@ -214,10 +250,78 @@ class StackInAWsgiAdmin(StackInABoxService):
         :returns: tuple for StackInABox HTTP Response
 
         HTTP Request:
-            GET /admin/
+            GET /admin/{X-Session-ID}
                 X-Session-ID: (Required) Session-ID to reset
 
         HTTP Responses:
-            500 - Not Implemented
+            200 - Session Data in JSON format
         """
-        return (500, headers, 'Not Implemented')
+        requested_session_id = self.helper_get_session_id_from_uri(
+            uri
+        )
+
+        session_info = {
+            'session_valid': requested_session_id in global_sessions,
+            'created-time': None,
+            'accessed-time': None,
+            'accessed-count': 0,
+            'http-status': {}
+        }
+
+        if session_info['session_valid']:
+            session = global_sessions[requested_session_id]
+            session_info['created-time'] = session.created_at.isoformat()
+            session_info['accessed-time'] = (
+                session.last_accessed_at.isoformat()
+            )
+            session_info['accessed-count'] = session.access_count
+            session_info['http-status'] = session.status_tracker
+
+        data = {
+            'base_url': self.base_uri,
+            'services': {
+                svc().name: svc.__name__
+                for svc in self.manager.services
+            },
+            'trackers': {
+                'created-time': session_info['created-time'],
+                'accessed': {
+                    'time': session_info['accessed-time'],
+                    'count': session_info['accessed-count']
+                },
+                'status': session_info['http-status']
+            },
+            'session_valid': session_info['session_valid']
+        }
+
+        return (200, headers, json.dumps(data))
+
+    def get_sessions(self, request, uri, headers):
+        """
+        Get Session List - TBD
+
+        :param :obj:`Request` request: object containing the HTTP Request
+        :param text_type uri: the URI for the request per StackInABox
+        :param dict headers: case insensitive header dictionary
+
+        :returns: tuple for StackInABox HTTP Response
+
+        HTTP Request:
+            GET /admin/
+
+        HTTP Responses:
+            200 - Session List in JSON format
+        """
+        data = {
+            'base_url': self.base_uri,
+            'services': {
+                svc().name: svc.__name__
+                for svc in self.manager.services
+            },
+            'sessions': [
+                requested_session_id
+                for requested_session_id in global_sessions
+            ]
+        }
+
+        return (200, headers, json.dumps(data))
