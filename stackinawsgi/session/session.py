@@ -3,6 +3,7 @@ Stack-In-A-WSGI Session Module
 """
 from __future__ import absolute_import
 
+import datetime
 import logging
 from threading import Lock
 
@@ -58,6 +59,52 @@ class Session(object):
         self.stack = StackInABox()
         self.stack.base_url = self.session_id
         self.init_services()
+        self.created_at = datetime.datetime.utcnow()
+        self._last_accessed_time = self.created_at
+        self._access_count = 0
+        self._http_status_dict = {}
+
+    def _update_trackers(self):
+        """
+        Update the session trackers
+        """
+        self._access_count = self._access_count + 1
+        self._last_accessed_time = datetime.datetime.utcnow()
+
+    def _track_result(self, result):
+        """
+        Track the results from StackInABox
+        """
+        status, _, _ = result
+        if status not in self._http_status_dict:
+            self._http_status_dict[status] = 0
+
+        self._http_status_dict[status] = (
+            self._http_status_dict[status] + 1
+        )
+
+        return result
+
+    @property
+    def last_accessed_at(self):
+        """
+        Return the time the session was last accessed
+        """
+        return self._last_accessed_time
+
+    @property
+    def access_count(self):
+        """
+        Return the number of times the session has been called
+        """
+        return self._access_count
+
+    @property
+    def status_tracker(self):
+        """
+        Return the current copy of HTTP Status Code Trackers
+        """
+        return self._http_status_dict
 
     def init_services(self):
         """
@@ -72,6 +119,7 @@ class Session(object):
                 )
             )
             self.stack.register(svc)
+        self._http_status_dict = {}
 
     @property
     def base_url(self):
@@ -104,6 +152,7 @@ class Session(object):
         Reset the StackInABox instance to the initial state by
         resetting the instance then re-registering all the services.
         """
+        self._update_trackers()
         logger.debug(
             'Session {0}: Waiting for lock'.format(
                 self.session_id
@@ -123,6 +172,7 @@ class Session(object):
         """
         Wrapper to same in the StackInABox instance
         """
+        self._update_trackers()
         logger.debug(
             'Session {0}: Waiting for lock'.format(
                 self.session_id
@@ -135,12 +185,15 @@ class Session(object):
                 )
             )
 
-            return self.stack.call(*args, **kwargs)
+            return self._track_result(
+                self.stack.call(*args, **kwargs)
+            )
 
     def try_handle_route(self, *args, **kwargs):
         """
         Wrapper to same in the StackInABox instance
         """
+        self._update_trackers()
         logger.debug(
             'Session {0}: Waiting for lock'.format(
                 self.session_id
@@ -153,12 +206,15 @@ class Session(object):
                 )
             )
 
-            return self.stack.try_handle_route(*args, **kwargs)
+            return self._track_result(
+                self.stack.try_handle_route(*args, **kwargs)
+            )
 
     def request(self, *args, **kwargs):
         """
         Wrapper to same in the StackInABox instance
         """
+        self._update_trackers()
         logger.debug(
             'Session {0}: Waiting for lock'.format(
                 self.session_id
@@ -171,12 +227,15 @@ class Session(object):
                 )
             )
 
-            return self.stack.request(*args, **kwargs)
+            return self._track_result(
+                self.stack.request(*args, **kwargs)
+            )
 
     def sub_request(self, *args, **kwargs):
         """
         Pass-thru to the StackInABox instance's sub_request
         """
+        self._update_trackers()
         logger.debug(
             'Session {0}: Waiting for lock'.format(
                 self.session_id
@@ -189,4 +248,6 @@ class Session(object):
                 )
             )
 
-            return self.stack.sub_request(*args, **kwargs)
+            return self._track_result(
+                self.stack.sub_request(*args, **kwargs)
+            )

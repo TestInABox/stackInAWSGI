@@ -1,7 +1,11 @@
 """
 Stack-In-A-WSGI: stackinawsgi.admin.admin.StackInAWsgiSessionManager
 """
+import datetime
+import json
 import unittest
+
+import ddt
 
 from stackinabox.services.service import StackInABoxService
 from stackinabox.services.hello import HelloService
@@ -16,6 +20,7 @@ from stackinawsgi.wsgi.response import Response
 from stackinawsgi.test.helpers import make_environment
 
 
+@ddt.ddt
 class TestSessionManager(unittest.TestCase):
     """
     Test the interaction of StackInAWSGI's Session Manager
@@ -68,6 +73,8 @@ class TestSessionManager(unittest.TestCase):
 
     def test_property_base_uri_ends_with_slash(self):
         """
+        test the base uri property to ensure the trailing slash
+        is removed
         """
         base_uri = 'hello/'
         admin = StackInAWsgiAdmin(self.manager, base_uri)
@@ -333,6 +340,54 @@ class TestSessionManager(unittest.TestCase):
         # validate response
         self.assertEqual(response.status, 404)
 
+    @ddt.data(0, 1, 2, 3, 5, 8, 13)
+    def test_get_sessions(self, session_count):
+        """
+        test get sessions
+        """
+        admin = StackInAWsgiAdmin(self.manager, self.base_uri)
+
+        uri = u'/'
+        environment = make_environment(
+            self,
+            method='GET',
+            path=uri[1:],
+            headers={}
+        )
+        request = Request(environment)
+
+        for _ in range(session_count):
+            admin.manager.create_session()
+
+        response = Response()
+        result = admin.get_sessions(
+            request,
+            uri,
+            request.headers
+        )
+        response.from_stackinabox(
+            result[0],
+            result[1],
+            result[2]
+        )
+        # validate response
+        self.assertEqual(response.status, 200)
+
+        response_body = response.body
+        session_data = json.loads(response_body)
+
+        self.assertIn('base_url', session_data)
+        self.assertEqual(session_data['base_url'], self.base_uri)
+
+        self.assertIn('services', session_data)
+        self.assertEqual(len(session_data['services']), 1)
+
+        self.assertIn('hello', session_data['services'])
+        self.assertEqual(session_data['services']['hello'], 'HelloService')
+
+        self.assertIn('sessions', session_data)
+        self.assertEqual(len(session_data['sessions']), session_count)
+
     def test_get_session_info(self):
         """
         test resetting a session with an invalid session id
@@ -340,10 +395,10 @@ class TestSessionManager(unittest.TestCase):
         admin = StackInAWsgiAdmin(self.manager, self.base_uri)
 
         session_id = 'my-session-id'
-        uri = u'/'
+        uri = u'/{0}'.format(session_id)
         environment = make_environment(
             self,
-            method='PUT',
+            method='GET',
             path=uri[1:],
             headers={
                 'x-session-id': session_id
@@ -352,8 +407,21 @@ class TestSessionManager(unittest.TestCase):
         request = Request(environment)
         self.assertIn('x-session-id', request.headers)
         self.assertEqual(session_id, request.headers['x-session-id'])
-        response = Response()
 
+        response_created = Response()
+        result_create = admin.create_session(
+            request,
+            uri,
+            request.headers
+        )
+        response_created.from_stackinabox(
+            result_create[0],
+            result_create[1],
+            result_create[2]
+        )
+        self.assertEqual(response_created.status, 201)
+
+        response = Response()
         result = admin.get_session_info(
             request,
             uri,
@@ -365,4 +433,130 @@ class TestSessionManager(unittest.TestCase):
             result[2]
         )
         # validate response
-        self.assertEqual(response.status, 500)
+        self.assertEqual(response.status, 200)
+
+        response_body = response.body
+        session_data = json.loads(response_body)
+
+        self.assertIn('base_url', session_data)
+        self.assertEqual(session_data['base_url'], self.base_uri)
+
+        self.assertIn('session_valid', session_data)
+        self.assertTrue(session_data['session_valid'])
+
+        self.assertIn('services', session_data)
+        self.assertEqual(len(session_data['services']), 1)
+
+        self.assertIn('hello', session_data['services'])
+        self.assertEqual(session_data['services']['hello'], 'HelloService')
+
+        self.assertIn('trackers', session_data)
+        self.assertEqual(len(session_data['trackers']), 3)
+
+        self.assertIn('created-time', session_data['trackers'])
+        self.assertIsNotNone(session_data['trackers']['created-time'])
+        created_time = datetime.datetime.strptime(
+            session_data['trackers']['created-time'],
+            "%Y-%m-%dT%H:%M:%S.%f"
+        )
+
+        self.assertIn('accessed', session_data['trackers'])
+        self.assertEqual(len(session_data['trackers']['accessed']), 2)
+        self.assertIn('time', session_data['trackers']['accessed'])
+        self.assertIsNotNone(session_data['trackers']['accessed']['time'])
+        accessed_time = datetime.datetime.strptime(
+            session_data['trackers']['accessed']['time'],
+            "%Y-%m-%dT%H:%M:%S.%f"
+        )
+        self.assertEqual(created_time, accessed_time)
+        self.assertIn('count', session_data['trackers']['accessed'])
+
+        self.assertIn('status', session_data['trackers'])
+        self.assertEqual(len(session_data['trackers']['status']), 0)
+
+    def test_get_session_info_invalid_session(self):
+        """
+        test resetting a session with an invalid session id
+        """
+        admin = StackInAWsgiAdmin(self.manager, self.base_uri)
+
+        session_id = 'my-session-id'
+        uri = u'/{0}'.format(session_id)
+
+        environment = make_environment(
+            self,
+            method='PUT',
+            path=uri[1:],
+        )
+        request = Request(environment)
+
+        response = Response()
+        result = admin.get_session_info(
+            request,
+            uri,
+            request.headers
+        )
+        response.from_stackinabox(
+            result[0],
+            result[1],
+            result[2]
+        )
+        # validate response
+        self.assertEqual(response.status, 200)
+
+        response_body = response.body
+        session_data = json.loads(response_body)
+
+        self.assertIn('base_url', session_data)
+        self.assertEqual(session_data['base_url'], self.base_uri)
+
+        self.assertIn('session_valid', session_data)
+        self.assertFalse(session_data['session_valid'])
+
+        self.assertIn('services', session_data)
+        self.assertEqual(len(session_data['services']), 1)
+
+        self.assertIn('hello', session_data['services'])
+        self.assertEqual(session_data['services']['hello'], 'HelloService')
+
+        self.assertIn('trackers', session_data)
+        self.assertEqual(len(session_data['trackers']), 3)
+
+        self.assertIn('created-time', session_data['trackers'])
+        self.assertIsNone(session_data['trackers']['created-time'])
+
+        self.assertIn('accessed', session_data['trackers'])
+        self.assertEqual(len(session_data['trackers']['accessed']), 2)
+        self.assertIn('time', session_data['trackers']['accessed'])
+        self.assertIsNone(session_data['trackers']['accessed']['time'])
+        self.assertIn('count', session_data['trackers']['accessed'])
+
+        self.assertIn('status', session_data['trackers'])
+        self.assertEqual(len(session_data['trackers']['status']), 0)
+
+    def test_extract_session_from_uri(self):
+        """
+        test extracting a session from the URI - positive test
+        """
+        admin = StackInAWsgiAdmin(self.manager, self.base_uri)
+
+        session_id = 'my-session-id'
+        uri = u'/{0}'.format(session_id)
+
+        extracted_session_id = admin.helper_get_session_id_from_uri(
+            uri
+        )
+        self.assertEqual(session_id, extracted_session_id)
+
+    def test_extract_session_from_uri_invalid(self):
+        """
+        test extracting a session from the URI - negative test
+        """
+        admin = StackInAWsgiAdmin(self.manager, self.base_uri)
+
+        uri = u'/'
+
+        extracted_session_id = admin.helper_get_session_id_from_uri(
+            uri
+        )
+        self.assertIsNone(extracted_session_id)

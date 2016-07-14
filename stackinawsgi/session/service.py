@@ -21,6 +21,8 @@ from .session import Session
 #       must be able to be pickled, which we can't guarantee. So
 #       we're stuck with threading.
 global_sessions = dict()
+session_regex = '^\/([\w-]+)'
+session_regex_instance = '{0}\/.*'.format(session_regex)
 
 
 logger = logging.getLogger(__name__)
@@ -66,7 +68,7 @@ class StackInAWsgiSessionManager(StackInABoxService):
                 uri
             )
         )
-        matcher = re.compile('^\/([\w-]+)\/.*')
+        matcher = re.compile(session_regex_instance)
 
         matches = matcher.match(uri)
         if matches:
@@ -128,6 +130,8 @@ class StackInAWsgiSessionManager(StackInABoxService):
 
         :returns: text_type with the session id
         """
+        global global_sessions
+
         logger.debug(
             'Requesting creation of session. Optional Session Id: {0}'.format(
                 session_id
@@ -199,6 +203,8 @@ class StackInAWsgiSessionManager(StackInABoxService):
 
         :raises: InvalidSessionId if session id is not found
         """
+        global global_sessions
+
         if session_id in global_sessions:
             del global_sessions[session_id]
         else:
