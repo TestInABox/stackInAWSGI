@@ -94,7 +94,7 @@ class App(object):
         420: "Method Failure",
         450: "Blocked by Windows Parental Control (MS)",
         498: "Invalid Token",
-        499: "Token Required",
+        # 499: "Token Required", (re-defined)
         509: "Bandwidth Limit Exceeded",
         530: "Site Frozen",
         440: "Login Timeout",
