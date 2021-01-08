@@ -1,5 +1,4 @@
-# We need StackInABox Master until 0.10 is released
--e git+https://github.com/TestInABox/stackInABox#egg=stackinabox-0.10a
+stackInABox>=0.10.0
 coverage
 ddt
 httpretty==0.8.6

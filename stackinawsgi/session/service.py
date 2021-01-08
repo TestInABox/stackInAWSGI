@@ -21,8 +21,8 @@ from .session import Session
 #       must be able to be pickled, which we can't guarantee. So
 #       we're stuck with threading.
 global_sessions = dict()
-session_regex = '^\/([\w-]+)'
-session_regex_instance = '{0}\/.*'.format(session_regex)
+session_regex = r'^\/([\w-]+)'
+session_regex_instance = r'{0}\/.*'.format(session_regex)
 
 
 logger = logging.getLogger(__name__)
